@@ -14,7 +14,11 @@ function readStored(): string | null {
   }
 }
 
-export function ProfileAvatar() {
+export function ProfileAvatar({
+  showRemove = true,
+}: {
+  showRemove?: boolean;
+}) {
   const [src, setSrc] = useState<string | null>(readStored);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +81,7 @@ export function ProfileAvatar() {
         </span>
       </button>
 
-      {src && (
+      {src && showRemove && (
         <button
           type="button"
           className="absolute -top-1.5 -right-1.5 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-500 shadow hover:text-red-600"

@@ -73,7 +73,7 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-4 pt-5 pb-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <ProfileAvatar />
+          <ProfileAvatar showRemove={false} />
           <button
             type="button"
             className="min-w-0 flex-1 text-left"
