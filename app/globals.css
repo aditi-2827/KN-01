@@ -357,6 +357,20 @@ body {
   line-height: 0;
 }
 
+.tiptap .journal-image img {
+  /* Keep images from ever forcing the viewport wider than the editor column. */
+  max-width: 100%;
+  height: auto;
+}
+
+/* Resize works on touch: without this, browsers take the drag over for
+   scroll/zoom and pointermove never reaches the handle. */
+.tiptap .journal-image .ji-resize {
+  touch-action: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 .tiptap .journal-image[data-align="left"] {
   float: left;
   margin: 0.2em 1em 0.5em 0;
@@ -371,6 +385,14 @@ body {
   display: block;
   float: none;
   margin: 0.9em auto;
+}
+
+/* Phone safety net: never let a stored pixel width exceed the screen. */
+@media (max-width: 640px) {
+  .tiptap img,
+  .tiptap .journal-image {
+    max-width: 91vw !important;
+  }
 }
 
 .tiptap .ji-controls {
@@ -436,6 +458,25 @@ body {
   background: var(--color-clay-600);
   cursor: se-resize;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  /* Tell the browser we own the pointer drag here — otherwise on a touch
+     screen the gesture is claimed for scrolling and the resize never runs. */
+  touch-action: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  /* Let the handle own the drag instead of the browser scrolling/pinching. */
+  touch-action: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Phones: never let an image — or a width saved from a larger screen —
+   push past the viewport, even though max-width:100% handles most cases. */
+@media (max-width: 640px) {
+  .tiptap img,
+  .tiptap .journal-image {
+    max-width: 100% !important;
+    height: auto !important;
+  }
 }
 
 .tiptap hr {
