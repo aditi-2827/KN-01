@@ -20,6 +20,7 @@ interface AppContextValue {
   notes: Note[];
   folders: Folder[];
   location: Location;
+  refresh: () => Promise<void>;
   drawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
   navigate: (loc: Location) => void;
@@ -56,6 +57,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [location, setLocation] = useState<Location>({ type: "home" });
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const refresh = useCallback(async () => {
+    const [storedNotes, storedFolders] = await Promise.all([
+      storage.getAllNotes(),
+      storage.getAllFolders(),
+    ]);
+    setNotes(storedNotes);
+    setFolders(storedFolders);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,6 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notes,
       folders,
       location,
+      refresh,
       drawerOpen,
       setDrawerOpen,
       navigate,
@@ -224,6 +235,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notes,
       folders,
       location,
+      refresh,
       drawerOpen,
       navigate,
       createFolder,

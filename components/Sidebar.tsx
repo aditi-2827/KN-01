@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   Cloud,
+  Download,
   FilePlus2,
   Flame,
   FolderPlus,
   NotebookPen,
   RefreshCw,
   Search,
+  Upload,
   WifiOff,
   X,
 } from "lucide-react";
@@ -17,6 +19,7 @@ import { useApp } from "@/lib/AppContext";
 import { useReminder, formatTime } from "@/lib/reminder";
 import { computeStreak } from "@/lib/streak";
 import { triggerSync, useSyncStatus } from "@/lib/sync/engine";
+import { downloadBackup, readBackupFile, restoreBackup } from "@/lib/backup";
 import { ActionModal, FileTree, type FileTreeAction } from "./FileTree";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ThemePicker } from "./ThemePicker";
@@ -46,12 +49,14 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 }
 
 export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
-  const { navigate, createNote, createFolder, ready, notes, location } =
+  const { navigate, createNote, createFolder, ready, notes, location, refresh } =
     useApp();
   const { reminder, setReminder, permission } = useReminder();
   const sync = useSyncStatus();
   const [action, setAction] = useState<FileTreeAction | null>(null);
   const [query, setQuery] = useState("");
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (location.type !== "search") setQuery("");
@@ -67,6 +72,31 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
     } else {
       navigate({ type: "home" });
     }
+  }
+
+  function handleBackup() {
+    setBackupMsg(null);
+    void downloadBackup()
+      .then(() => setBackupMsg("Backup saved to your downloads"))
+      .catch(() => setBackupMsg("Couldn’t create the backup"));
+  }
+
+  function handleRestoreFile(file: File | undefined) {
+    if (!file) return;
+    setBackupMsg(null);
+    void readBackupFile(file)
+      .then(restoreBackup)
+      .then(async (result) => {
+        await refresh();
+        setBackupMsg(
+          `Restored ${result.counts.notes} notes and ${result.counts.folders} folders`
+        );
+      })
+      .catch((err: unknown) => {
+        setBackupMsg(
+          err instanceof Error ? err.message : "Couldn’t restore that backup"
+        );
+      });
   }
 
   return (
@@ -203,7 +233,7 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
 
       <div className="mx-4 flex items-center gap-2 px-1 pb-2">
         <span className="font-sans text-[11px] tracking-wide text-ink-500 uppercase">
-          Sync
+          Storage
         </span>
         <span className="h-px flex-1 bg-paper-300" />
       </div>
@@ -229,7 +259,7 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-sans text-xs font-medium text-ink-700">
             {!sync.enabled
-              ? "Local only"
+              ? "This device only"
               : sync.status === "syncing"
                 ? "Syncing…"
                 : sync.status === "offline"
@@ -263,6 +293,43 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
           </button>
         )}
       </div>
+
+      <div className="mx-4 mb-2 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          className="btn-soft w-full"
+          onClick={handleBackup}
+          title="Download all notes and folders as a JSON file"
+        >
+          <Download size={16} />
+          Backup
+        </button>
+        <button
+          type="button"
+          className="btn-soft w-full"
+          onClick={() => fileRef.current?.click()}
+          title="Replace this device's data with a backup file"
+        >
+          <Upload size={16} />
+          Restore
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            handleRestoreFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {backupMsg && (
+        <p className="mx-4 mb-2 font-sans text-[11px] text-ink-500">
+          {backupMsg}
+        </p>
+      )}
 
       <div className="mx-4 flex items-center gap-2 px-1 pb-2">
         <span className="font-sans text-[11px] tracking-wide text-ink-500 uppercase">
